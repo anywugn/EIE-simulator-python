@@ -1,18 +1,17 @@
 class Register:
-    data = 0
-    changes = 0
+    
     def __init__(self):
-        pass    
+        self.data = 0
+        self.changes = 0   
 
 
 
 
 class Wire:
-    data = 0
-    changes = 0
-    
+
     def __init__(self):
-        pass
+        self.data = 0
+        self.changes = 0
 
     
 
@@ -20,13 +19,15 @@ class Wire:
 
 class SharedWire:
     
-    data=[]
+    # TODO we don't have * in python LOL
+    # Think about how to revise it
 
     def __init__(self):
         pass
 
+
 class Memory:
-    data = 0
+    
 
     def __init__(self):
-        pass 
+        self.data = 0
