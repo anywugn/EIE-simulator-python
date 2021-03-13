@@ -2,6 +2,9 @@ from component import  *
 from module import *
 from ptrvec import *
 from spmat import *
+from Nzerofetch import *
+from ActsRW import *
+
 
 def test_pointer_read():
     b = PtrRead("file.txt",0)
@@ -132,18 +135,29 @@ def test_pointer_read():
     b.showRegs()
 def main():
     #test_pointer_read()
-    b = PtrRead("file.txt", 0)
-    c = NzeroFetch()
-    d = SpMatRead("",0)
+    PointerRead0 = PtrRead("file.txt", 0)
+    PointerRead1 = PtrRead("file.txt", 1)
+    PointerRead2 = PtrRead("file.txt", 2)
+    PointerRead3 = PtrRead("file.txt", 3)
+    acts = ActsRW()
+    NZeroFetch = NzeroFetch()
 
-    b.connect(c)
-    d.connect(b)
+    NZeroFetch.connect(acts)
+    NZeroFetch.connect(PointerRead0)
+    NZeroFetch.connect(PointerRead1)
+    NZeroFetch.connect(PointerRead2)
+    NZeroFetch.connect(PointerRead3)
 
-    b.showSharedWires()
-    c.showSharedWires()
-    d.showSharedWires()
+    PointerRead0.connect(NZeroFetch)
+    PointerRead1.connect(NZeroFetch)
+    PointerRead2.connect(NZeroFetch)
+    PointerRead3.connect(NZeroFetch)
 
+    NZeroFetch.connect(acts)
 
+    NZeroFetch.showSharedWires()
+
+    print(5//2)
 if __name__ == '__main__':
     main()
 

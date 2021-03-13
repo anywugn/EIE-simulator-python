@@ -54,17 +54,7 @@ class BaseModule:
         return "[Module: " + str(self.getName()) + "; id = "+ str(self.getId()) +"]"
 
 
-class NzeroFetch(BaseModule):
-    def __init__(self):
-        super().__init__()
-        self.name = "Non-Zero Fetch"
 
-
-        self.ptr_odd_addr = Wire(shared=False,width=NUM_PE,name="ptr_odd_addr",value=4)
-        self.ptr_even_addr = Wire(shared=False,width=NUM_PE,name="ptr_even_addr",value=3)
-        self.index_flag = Wire(shared=False,width=NUM_PE,name="index_flag",value=2)
-        self.empty = Wire(shared=False,width=NUM_PE,name="empty",value=1)
-        self.value_output = Wire(shared=False,width=NUM_PE,name="value_output",value=22)
 
 
 
