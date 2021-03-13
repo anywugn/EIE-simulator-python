@@ -47,6 +47,9 @@ class SpMatRead(BaseModule):
 
                 for i in range(0, 2*self.unit_line):
                     self.data_read.data[i] = self.WImem.data[i]
+        
+        # Others
+        self.read_times = 0
 
     def connect(self, dependency):
         if dependency.getName() == "Pointer Read Unit" and dependency.getId() == self.getId():
@@ -64,3 +67,31 @@ class SpMatRead(BaseModule):
             dependency.value_w.shared = True
         else:
             print("Error: Connection Error")
+    
+
+    def update(self):
+        if self.valid_D != None:
+            self.patch_complete = self.patch_complete_D
+            self.memory_shift = self.memory_addr_D
+            self.memory_addr = self.memory_addr_D
+            self.value = self.value_D
+        
+        self.read_enable = self.read_enable_D
+        self.valid = self.valid_D
+
+
+    def propagate(self):
+        
+        # Memory access
+        if self.read_enable.data != 0:
+            for i in range(0, 2*self.unit_line):
+                self.data_read.data[i] = self.WImem.data[i + self.memory_addr.data * (self.unit_line * 2)]
+            self.read_times += 1
+        
+        self.code = self.data_read.data[self.memory_shift.data * 2]
+        self.index = self.data_read.data[self.memory_shift.data * 2 + 1]
+
+        self.value_w = self.value
+        self.valid_w = self.valid
+        self.patch_complete_w = self.patch_complete
+        
