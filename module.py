@@ -50,6 +50,9 @@ class BaseModule:
             if type(i) is type(Wire()):
                 print(i)
 
+    def showConnectionWires(self):
+        pass
+
     def __str__(self):
         return "[Module: " + str(self.getName()) + "; id = "+ str(self.getId()) +"]"
 

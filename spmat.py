@@ -70,28 +70,24 @@ class SpMatRead(BaseModule):
     
 
     def update(self):
-        if self.valid_D != None:
-            self.patch_complete = self.patch_complete_D
-            self.memory_shift = self.memory_addr_D
-            self.memory_addr = self.memory_addr_D
-            self.value = self.value_D
+        if self.valid_D.data == 1:
+            self.patch_complete.data = self.patch_complete_D.data
+            self.memory_shift.data = self.memory_shift_D.data
+            self.memory_addr.data = self.memory_addr_D.data
+            self.value.data = self.value_D.data
         
-        self.read_enable = self.read_enable_D
-        self.valid = self.valid_D
-
+        self.read_enable.data = self.read_enable_D.data
+        self.valid.data = self.valid_D.data
 
     def propagate(self):
-        
         # Memory access
-        if self.read_enable.data != 0:
+        if self.read_enable.data == 1:
             for i in range(0, 2*self.unit_line):
                 self.data_read.data[i] = self.WImem.data[i + self.memory_addr.data * (self.unit_line * 2)]
-            self.read_times += 1
         
-        self.code = self.data_read.data[self.memory_shift.data * 2]
-        self.index = self.data_read.data[self.memory_shift.data * 2 + 1]
+        self.code.data = self.data_read.data[self.memory_shift.data * 2]
+        self.index.data = self.data_read.data[self.memory_shift.data * 2 + 1]
 
-        self.value_w = self.value
-        self.valid_w = self.valid
-        self.patch_complete_w = self.patch_complete
-        
+        self.value_w.data = self.value.data
+        self.valid_w.data = self.valid.data
+        self.patch_complete_w.data = self.patch_complete.data

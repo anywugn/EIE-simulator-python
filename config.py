@@ -9,3 +9,6 @@ SPMAT_weight_bits = 4
 
 
 NZEROFETCH_buffersize = 4
+
+
+ARITHM_codebooksize = 16

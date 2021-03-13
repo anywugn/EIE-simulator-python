@@ -56,8 +56,8 @@ class NzeroFetch(BaseModule):
         if dependency.getName() == "Activation Read/Write":
             self.reg_addr_D = dependency.reg_addr_w
             dependency.reg_addr_w.shared = True
-            self.acts_per_bank_D = dependency.acts_per_bank
-            dependency.acts_per_bank.shared = True
+            self.acts_per_bank_D = dependency.acts_per_bank_D
+            dependency.acts_per_bank_D.shared = True
         elif dependency.getName() == "Pointer Read Unit":
             self.read_ptr.data[dependency.getId()] = dependency.read_ptr
             dependency.read_ptr.shared = True
@@ -72,12 +72,12 @@ class NzeroFetch(BaseModule):
         if NUM_PE > 1:
             for i in range(NUM_PE):
                 self.pos_read_D.data[i] = (self.pos_read.data[i] + 1) % self.buffer_size
-                self.pos_write_D.data[i] = (self.pos_write[i] + 1) % self.buffer_size
+                self.pos_write_D.data[i] = (self.pos_write.data[i] + 1) % self.buffer_size
 
                 self.full.data[i] = int(self.pos_write_D.data[i] == self.pos_read.data[i])
                 self.empty.data[i] = int(self.pos_write.data[i] == self.pos_read.data[i])
 
-                self.one_full = int(self.one_full or self.full.data[i])
+                self.one_full.data = int(self.one_full.data or self.full.data[i])
 
                 self.value_output.data[i] = self.value.data[i][self.pos_read.data[i]]
                 self.act_index_output.data[i] = self.act_index.data[i][self.pos_read.data[i]]
@@ -98,13 +98,13 @@ class NzeroFetch(BaseModule):
         else:
             self.pack_addr.data = NUM_PE - 1
 
-        self.value_buffer = self.acts_per_bank.data[self.pack_addr.data]
-        self.index_buffer = self.reg_addr.data * NUM_PE + self.pack_addr.data
+        self.value_buffer.data = self.acts_per_bank.data[self.pack_addr.data]
+        self.index_buffer.data = self.reg_addr.data * NUM_PE + self.pack_addr.data
 
-        self.next_shift = int(not(self.one_full.data and self.find))
+        self.next_shift.data = int(not(self.one_full.data and self.find.data))
         self.next_reg_addr.data = int((not self.find) or((self.pack_addr.data == NUM_PE-1) and (not self.one_full.data)))
 
-        self.write_enable = int(self.find.data and (not self.one_full.data))
+        self.write_enable.data = int(self.find.data and (not self.one_full.data))
 
     def update(self):
         if self.next_shift.data == 1:
@@ -129,3 +129,4 @@ class NzeroFetch(BaseModule):
         super(NzeroFetch, self).showSharedWires()
         for i in range(NUM_PE):
             print("PE",i,":",self.read_ptr.data[i])
+
