@@ -3,8 +3,9 @@ from component import *
 from config import *
 import os
 
+
 class ArithmUnit(BaseModule):
-    def __init__(self,filename: str, value: int):
+    def __init__(self, filename: str, value: int):
         super().__init__(value)
         self.name = "Arithm Unit"
 
@@ -47,9 +48,75 @@ class ArithmUnit(BaseModule):
 
         self.codebook = [0] * ARITHM_codebooksize
 
+        # Shared Wire
+        self.patch_complete_D = None
+        self.index_D = None
+        self.value_code_D = None
+        self.act_value_D = None
+        self.valid_D = None
+        self.read_data_D = None
+
         if os.path.isfile(filename):
-            with open(filename,'r') as f:
+            with open(filename, 'r') as f:
                 values = f.read().splitlines()
                 for i in range(0, len(values)):
                     self.codebook = float(values[i])
+
+    def connect(self, dependency):
+        if dependency.getName() == "Sparse Matrix Read" and dependency.getId() == self.getId():
+            self.patch_complete_D = dependency.patch_complete_w
+            self.index_D = dependency.index
+            self.value_code_D = dependency.code
+            self.act_value_D = dependency.value_w
+            self.valid_D = dependency.valid_w
+        elif dependency.getName() == "Activation Read/Write":
+            self.read_data_D = dependency.read_data_arithm
+
+    def propagate(self):
+        self.read_addr.data = self.index.data + self.read_addr_last.data
+        if self.patch_complete.data == 1:
+            self.read_addr_last_D.data = 0
+        else:
+            self.read_addr_last_D.data = self.read_addr.data + 1
+        self.value_decode_D.data = self.codebook[self.value_code.data]
+        self.value_code_w.data = self.value_code.data
+        self.act_value_w.data = self.act_value.data
+        self.valid_w.data = self.valid.data
+
+        self.bypass.data = int(self.valid_p_p.data and (self.read_addr_p.data == self.read_addr_p_p.data))
+        self.result_mul_D.data = self.value_decode.data * self.act_value_p.data
+        self.valid_p_w.data = self.valid_p.data
+        self.read_addr_p_w.data = self.read_addr_p.data
+
+        self.result_muladd.data = self.result_mul.data + self.read_data.data
+
+        self.write_enable.data = self.valid_p_p.data
+        self.write_addr.data = self.read_addr_p_p.data
+        self.write_data.data = self.result_muladd.data
+
+
+    def update(self):
+        self.patch_complete.data = self.patch_complete_D.data
+        self.index.data = self.index_D.data
+        self.value_code.data = self.value_code_D.data
+        self.act_value.data = self.act_value_D.data
+        self.valid.data = self.valid_D.data
+
+        if self.valid_w.data == 1:
+            self.read_addr_last.data = self.read_addr_last_D.data
+
+        self.read_addr_p.data = self.read_addr.data
+        self.value_decode.data = self.value_decode_D.data
+        self.act_value_p.data = self.act_value_w.data
+
+        self.valid_p.data = int(self.valid_w.data and (self.value_code_w.data != 0))
+
+
+        self.read_addr_p_p.data = self.read_addr_p_w.data
+        self.result_mul.data = self.result_mul_D.data
+        self.valid_p_p.data = self.valid_p_w.data
+        if self.bypass.data == 1:
+            self.read_data.data = self.write_data.data
+        else:
+            self.read_data.data = self.read_data_D.data
 

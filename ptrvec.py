@@ -144,3 +144,15 @@ class PtrRead(BaseModule):
             self.start_addr_p.data = self.current_addr.data + 1
             self.patch_complete_p.data = self.patch_complete.data
             self.memory_addr_p.data = self.memory_addr.data
+
+    def showEssential(self):
+        print("---Pointer Read---")
+        print(self.read_enable)
+        print(self.memory_addr)
+        print(self.memory_shift)
+        print(self.read_spmat)
+        print(self.patch_complete)
+        print(self.value_w)
+        print(self.valid)
+        print(self.read_ptr)
+

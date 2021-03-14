@@ -121,6 +121,7 @@ class NzeroFetch(BaseModule):
                 self.pos_write.data[i] = self.pos_write_D.data[i]
 
         for i in range(NUM_PE):
+
             if (not self.empty.data[i]) and self.read_ptr.data[i].data:
                 self.pos_read.data[i] = self.pos_read_D.data[i]
 
@@ -129,4 +130,6 @@ class NzeroFetch(BaseModule):
         super(NzeroFetch, self).showSharedWires()
         for i in range(NUM_PE):
             print("PE",i,":",self.read_ptr.data[i])
+
+
 
