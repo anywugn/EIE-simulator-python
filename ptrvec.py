@@ -124,7 +124,7 @@ class PtrRead(BaseModule):
 
         # if we finish a patch or current entry is not valid, we acquire a new
         # even and odd index pairs from Non Zero Fetch Unit
-        self.read_ptr.data = int((not self.valid.data) or self.patch_complete.data)
+        self.read_ptr.data = 1#int((not self.valid.data) or self.patch_complete.data)
 
     def update(self):
         # Only read index pointers when we need index pointers and next activation value is not empty

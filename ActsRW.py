@@ -3,21 +3,18 @@ from component import *
 from config import *
 import os
 from enum import Enum
-class InterState(Enum):
-    Activations_k = 0,
-    Bias1_k = 1,
-    Empty_k = 2
+
+Activations_k = 0
+Bias1_k = 1
+Empty_k = 2
 
 class ActsRW(BaseModule):
     def __init__(self,filename):
         super().__init__()
         self.name = "Activation Read/Write"
 
-        self.reg_addr_w = Wire(name="reg_addr_w")
-        self.acts_per_bank_D = Wire(width=NUM_PE,name="acts_per_bank_D")
-
         # To Nonzero fetch Registers
-        self.read_addr_reg = Register("read_addr_reg")
+        self.read_addr_reg = Register(name="read_addr_reg")
         self.end_addr_reg = Register(name="end_addr_reg")
         self.which = Register(name="which")
         self.internal_state = Register(name="internal_state")
@@ -53,16 +50,17 @@ class ActsRW(BaseModule):
 
 
 
-        self.bank_size = (ACTRW_maxcapacity - 1) / NUM_PE + 1
+        self.bank_size = (ACTRW_maxcapacity - 1) // NUM_PE + 1
         self.memory_size = self.bank_size * NUM_PE
 
-        self.ACTmem = [Memory("ACTmem0", self.memory_size),Memory("ACTmem1", self.memory_size)]
+        self.ACTmem = [Memory(name="ACTmem0", size=self.memory_size),Memory(name="ACTmem1", size=self.memory_size)]
+
 
         if os.path.isfile(filename):
             with open(filename, 'r') as f:
                 values = f.read().splitlines()
                 for i in range(0, len(values)):
-                    self.ACTmem[self.which.data] = int(values[i])
+                    self.ACTmem[self.which.data].data[i] = int(values[i])
 
 
     def set_state(self, input_size_t, which_t, bias_t):
@@ -71,16 +69,21 @@ class ActsRW(BaseModule):
         if input_size_t > ACTRW_maxcapacity:
             print("Error: End address exceeds memory capacity")
 
-        self.end_addr_reg.data = (input_size_t - 1) / NUM_PE
+        self.end_addr_reg.data = (input_size_t - 1) // NUM_PE
 
     def connect(self, dependency):
         if dependency.getName() == "Non-Zero Fetch":
-            self.next_reg_addr.data = dependency.next_reg_addr.data
+            self.next_reg_addr = dependency.next_reg_addr
+            dependency.next_reg_addr.shared = True
         elif dependency.getName() == "Arithm Unit":
             self.read_addr_arithm_D.data[dependency.getId()] = dependency.read_addr.data
+            dependency.read_addr.shared = True
             self.write_addr_arithm_D.data[dependency.getId()] = dependency.write_addr.data
+            dependency.write_addr.shared = True
             self.write_data_arithm_D.data[dependency.getId()] = dependency.write_data.data
+            dependency.write_data.shared = True
             self.write_enable_D.data[dependency.getId()] = dependency.write_enable.data
+            dependency.write_enable.data = True
         else:
             print("Error: Unknown module type!")
 
@@ -88,7 +91,7 @@ class ActsRW(BaseModule):
         nzf_id = self.which.data
         arithm_id = 1 - self.which.data
 
-        if self.internal_state.data == InterState.Activations_k:
+        if self.internal_state.data == Activations_k:
             for i in range(NUM_PE):
                 self.acts_per_bank.data[i] = self.ACTmem[nzf_id].data[self.read_addr_reg.data * NUM_PE + i]
 
@@ -97,30 +100,45 @@ class ActsRW(BaseModule):
 
                 next_state = 0
                 if self.has_bias.data == 1:
-                    next_state = InterState.Bias1_k
+                    next_state = Bias1_k
                 else:
-                    next_state = InterState.Empty_k
+                    next_state = Empty_k
 
                 if self.read_addr_reg.data == self.end_addr_reg.data:
                     self.internal_state_D.data = next_state
                 else:
-                    self.internal_state_D.data = InterState.Activations_k
-        elif self.internal_state.data == InterState.Bias1_k:
+                    self.internal_state_D.data = Activations_k
+
+
+            if DEBUG == 1:
+                print("[ACTRW: activation send:",self.acts_per_bank.data,"reg_addr is:",self.reg_addr_w.data,"]")
+
+        elif self.internal_state.data == Bias1_k:
+
+
             for i in range(NUM_PE):
                 self.acts_per_bank.data[i] = 0
 
             self.acts_per_bank.data[0] = 1
             self.reg_addr_w.data = self.end_addr_reg.data + 1
             self.read_addr_reg_D.data = 0
-            self.internal_state_D.data = InterState.Empty_k
+            self.internal_state_D.data = Empty_k
 
-        elif self.internal_state.data == InterState.Empty_k:
+            if DEBUG == 1:
+                print("[ACTRW: Bias State, send: ", self.acts_per_bank.data, "reg_addr is", self.reg_addr_w.data, "]")
+
+
+        elif self.internal_state.data == Empty_k:
             for i in range(NUM_PE):
                 self.acts_per_bank.data[i] = 0
 
             self.reg_addr_w.data = 0
             self.read_addr_reg_D.data = 0
-            self.internal_state_D.data = InterState.Empty_k
+            self.internal_state_D.data = Empty_k
+
+            if DEBUG == 1:
+                print("[ACTRW: Empty State]")
+
         else:
             print("Error: unknown state")
 
@@ -130,14 +148,19 @@ class ActsRW(BaseModule):
             self.read_data_arithm.data[i] = self.ACTmem[arithm_id].data[self.read_data_arithm.data[i] * NUM_PE + i]
             self.write_complete.data = int(self.write_complete.data and (not self.write_enable.data[i]))
 
-        self.layer_complete.data = int(self.write_complete.data and (self.internal_state.data == InterState.Empty_k))
+        self.layer_complete.data = int(self.write_complete.data and (self.internal_state.data == Empty_k))
 
     def update(self):
         arithm_id = 1 - self.which.data
 
         if self.next_reg_addr.data == 1:
+
             self.read_addr_reg.data = self.read_addr_reg_D.data
             self.internal_state.data = self.internal_state_D.data
+
+            if DEBUG == 1:
+                print("[ACTRW: now read address:",self.read_addr_reg.data,"next state is:",self.internal_state.data,"]")
+
 
         for i in range(NUM_PE):
             if self.write_enable_D.data[i] == 1:

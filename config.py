@@ -1,6 +1,6 @@
 PTRVEC_num_lines = 40
 
-NUM_PE = 2
+NUM_PE = 4
 
 SPMAT_num_lines = 40
 SPMAT_index_bits = 4
@@ -14,8 +14,7 @@ NZEROFETCH_buffersize = 4
 ARITHM_codebooksize = 16
 
 
-ACTRW_maxcapacity = 800;
+ACTRW_maxcapacity = 800
 
-
-
+DEBUG = 1
 

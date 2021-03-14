@@ -56,8 +56,8 @@ class NzeroFetch(BaseModule):
         if dependency.getName() == "Activation Read/Write":
             self.reg_addr_D = dependency.reg_addr_w
             dependency.reg_addr_w.shared = True
-            self.acts_per_bank_D = dependency.acts_per_bank_D
-            dependency.acts_per_bank_D.shared = True
+            self.acts_per_bank_D = dependency.acts_per_bank
+            dependency.acts_per_bank.shared = True
         elif dependency.getName() == "Pointer Read Unit":
             self.read_ptr.data[dependency.getId()] = dependency.read_ptr
             dependency.read_ptr.shared = True
@@ -85,6 +85,10 @@ class NzeroFetch(BaseModule):
                 self.ptr_odd_addr.data[i] = self.act_index_output.data[i] // 2
                 self.ptr_even_addr.data[i] = (self.act_index_output.data[i] + 1) // 2
 
+            if DEBUG == 1:
+                for i in range(NUM_PE):
+                    print("[NZEROFETCH: act value broadcasted:",self.value_output.data[i],"act index is ",self.act_index_output.data[i],"empty:",self.empty.data[i],"]")
+
         # Find Non Zero entry
         self.find.data = 0
         for i in range((self.pack_addr_p.data+1)%NUM_PE, NUM_PE):
@@ -106,13 +110,24 @@ class NzeroFetch(BaseModule):
 
         self.write_enable.data = int(self.find.data and (not self.one_full.data))
 
+        if DEBUG:
+            if self.next_reg_addr.data == 1:
+                print("[NZEROFECTH: ask from ACTRW for more activations]")
+            else:
+                print("[NZEROFECTH: do not ask from ACTRW for more activations]")
+
+
     def update(self):
         if self.next_shift.data == 1:
             self.pack_addr_p.data = self.pack_addr.data
 
         if self.next_reg_addr.data == 1:
             self.reg_addr.data = self.reg_addr_D.data
-            self.acts_per_bank.data = self.acts_per_bank_D.data
+            for i in range(NUM_PE):
+                self.acts_per_bank.data[i] = self.acts_per_bank_D.data[i]
+
+            if DEBUG:
+                print("[NZEROFETCH: receive from ACTRW, activation",self.acts_per_bank.data,"reg_addr",self.reg_addr.data,"]")
 
         if self.write_enable.data == 1:
             for i in range(NUM_PE):
@@ -120,9 +135,13 @@ class NzeroFetch(BaseModule):
                 self.value.data[i][self.pos_write.data[i]] = self.value_buffer.data
                 self.pos_write.data[i] = self.pos_write_D.data[i]
 
-        for i in range(NUM_PE):
+                if DEBUG:
+                    print("[NZEROFETCH: write act value",self.value_buffer.data,"to PE ",i, "]")
 
+        for i in range(NUM_PE):
             if (not self.empty.data[i]) and self.read_ptr.data[i].data:
+                if DEBUG:
+                    print("[NZEROFETCH: read request from PE,",i,"]")
                 self.pos_read.data[i] = self.pos_read_D.data[i]
 
 
@@ -130,6 +149,5 @@ class NzeroFetch(BaseModule):
         super(NzeroFetch, self).showSharedWires()
         for i in range(NUM_PE):
             print("PE",i,":",self.read_ptr.data[i])
-
 
 
