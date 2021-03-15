@@ -37,17 +37,19 @@ class SpMatRead(BaseModule):
         self.value_D = None
 
         # Memory
-        self.WImem = Memory("WImem", PTRVEC_num_lines)
+        self.WImem = Memory("WImem", SPMAT_num_lines)
 
         if os.path.isfile(filename):
             with open(filename,'r') as f:
                 values = f.read().splitlines()
+
                 for i in range(0, len(values)):
                     self.WImem.data[i] = int(values[i])
 
                 for i in range(0, 2*self.unit_line):
                     self.data_read.data[i] = self.WImem.data[i]
-        
+            print("[SPMAT: mem init success]")
+            print(self.WImem.data)
         # Others
         self.read_times = 0
 
@@ -65,6 +67,7 @@ class SpMatRead(BaseModule):
             dependency.valid.shared = True
             self.value_D = dependency.value_w
             dependency.value_w.shared = True
+            print("[SPMAT",self.getId(),": CONNECTION SUCCESS TO",dependency.getName(),dependency.getId(),"]")
         else:
             print("Error: Connection Error")
     
@@ -75,7 +78,10 @@ class SpMatRead(BaseModule):
             self.memory_shift.data = self.memory_shift_D.data
             self.memory_addr.data = self.memory_addr_D.data
             self.value.data = self.value_D.data
-        
+
+            if DEBUG:
+                print("[SPMAT receive from pointer read]")
+
         self.read_enable.data = self.read_enable_D.data
         self.valid.data = self.valid_D.data
 
@@ -84,10 +90,16 @@ class SpMatRead(BaseModule):
         if self.read_enable.data == 1:
             for i in range(0, 2*self.unit_line):
                 self.data_read.data[i] = self.WImem.data[i + self.memory_addr.data * (self.unit_line * 2)]
-        
+
+            if DEBUG:
+                print("[SPMAT: successfully read a line at memory address",self.memory_addr.data,"]")
+
         self.code.data = self.data_read.data[self.memory_shift.data * 2]
         self.index.data = self.data_read.data[self.memory_shift.data * 2 + 1]
 
         self.value_w.data = self.value.data
         self.valid_w.data = self.valid.data
         self.patch_complete_w.data = self.patch_complete.data
+
+        print("[SPMAT: weight code:",self.code.data," index code:",self.index.data,
+              " activation value:",self.value.data," valid:",self.valid_w.data,"current patch is completed?",self.patch_complete.data,"]")

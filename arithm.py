@@ -60,7 +60,9 @@ class ArithmUnit(BaseModule):
             with open(filename, 'r') as f:
                 values = f.read().splitlines()
                 for i in range(0, len(values)):
-                    self.codebook = float(values[i])
+                    self.codebook[i] = float(values[i])
+            print('[ARITHM: codebook init success]')
+            print(self.codebook)
 
     def connect(self, dependency):
         if dependency.getName() == "Sparse Matrix Read" and dependency.getId() == self.getId():
@@ -69,8 +71,10 @@ class ArithmUnit(BaseModule):
             self.value_code_D = dependency.code
             self.act_value_D = dependency.value_w
             self.valid_D = dependency.valid_w
+            print("[ARITHM",self.getId(),": CONNECTION SUCCESS TO:",dependency.getName(),dependency.getId(),"]")
         elif dependency.getName() == "Activation Read/Write":
-            self.read_data_D = dependency.read_data_arithm
+            self.read_data_D = dependency.getattr("read_data_arithm_"+str(self.getId()))
+            print("[ARITHM", self.getId(), ": CONNECTION SUCCESS TO:", dependency.getName(),"]")
 
     def propagate(self):
         self.read_addr.data = self.index.data + self.read_addr_last.data
@@ -83,9 +87,20 @@ class ArithmUnit(BaseModule):
         self.act_value_w.data = self.act_value.data
         self.valid_w.data = self.valid.data
 
+        if DEBUG:
+            print("[ARITHM PHASE1 weight is:",self.value_decode_D.data,"activation is:",
+              self.act_value_w.data,"dest address is:",self.read_addr.data,"current entry is valid?",self.valid_w.data,"]")
         self.bypass.data = int(self.valid_p_p.data and (self.read_addr_p.data == self.read_addr_p_p.data))
         self.result_mul_D.data = self.value_decode.data * self.act_value_p.data
+
+
+
         self.valid_p_w.data = self.valid_p.data
+
+        if DEBUG:
+            print("[ARITHM PHASE2 result is:", self.result_mul_D.data, "from", self.value_decode.data, "*",
+                  self.act_value_p.data, "valid?", self.valid_p.data, "]")
+
         self.read_addr_p_w.data = self.read_addr_p.data
 
         self.result_muladd.data = self.result_mul.data + self.read_data.data
@@ -94,6 +109,9 @@ class ArithmUnit(BaseModule):
         self.write_addr.data = self.read_addr_p_p.data
         self.write_data.data = self.result_muladd.data
 
+        if DEBUG:
+            print("[ARITHM PHASE3 write data to ACT is",self.result_muladd.data,"read data from ACT:",self.read_data.data,"addr is:",
+              self.write_addr.data,"valid entry?",self.write_enable.data,"]")
 
     def update(self):
         self.patch_complete.data = self.patch_complete_D.data
@@ -104,12 +122,15 @@ class ArithmUnit(BaseModule):
 
         if self.valid_w.data == 1:
             self.read_addr_last.data = self.read_addr_last_D.data
+            if DEBUG:
+                print("[ARITHM update read_addr_last:",self.read_addr_last.data,"]")
+
 
         self.read_addr_p.data = self.read_addr.data
         self.value_decode.data = self.value_decode_D.data
         self.act_value_p.data = self.act_value_w.data
 
-        self.valid_p.data = int(self.valid_w.data and (self.value_code_w.data != 0))
+        self.valid_p.data = int(self.valid_w.data)# and (self.value_code_w.data != 0))
 
 
         self.read_addr_p_p.data = self.read_addr_p_w.data
@@ -119,4 +140,4 @@ class ArithmUnit(BaseModule):
             self.read_data.data = self.write_data.data
         else:
             self.read_data.data = self.read_data_D.data
-
+            print("[ARITHM: accumulate value acquired from ACTRW:",self.read_data.data,"]")

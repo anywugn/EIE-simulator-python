@@ -58,6 +58,8 @@ class PtrRead(BaseModule):
                 for i in range(0, len(values)):
                     self.PTRmem.data[i] = int(values[i])
 
+            print("[PTR READ mem init success]")
+            print(self.PTRmem.data)
     def connect(self, dependency: BaseModule):
 
         """
@@ -78,6 +80,7 @@ class PtrRead(BaseModule):
             dependency.value_output.shared = True
             self.empty_D = dependency.empty
             dependency.empty.shared = True
+            print("[PTR READ: CONNECTION SUCCESS TO:",dependency.getName(),"]")
         else:
             print("Error: Connection Error")
 
@@ -95,8 +98,20 @@ class PtrRead(BaseModule):
             self.start_addr.data = self.index_even.data
             self.end_addr.data = self.index_odd.data - 1
 
+
         # If current entry is empty or index even is equal to index odd, current activation is not valid
         self.valid.data = int(not ((self.index_even.data == self.index_odd.data) or self.empty.data))
+
+        if DEBUG == 1:
+            if self.read_enable.data == 1:
+                print("[PTR READ: read_enable",self.read_enable.data,"start mem addr is:",self.start_addr.data,"end mem addr is:",self.end_addr.data,"]")
+            else:
+                print("[PTR READ: read enable is false, do not read from Nzero fetch]")
+
+            if self.valid.data == 1:
+                print("[PTR READ: current value,",self.value.data,"is valid]")
+            else:
+                print("[PTR READ: current value,",self.value.data,"is not valid]")
 
         # Forward the activation value
         self.value_w.data = self.value.data
@@ -124,11 +139,22 @@ class PtrRead(BaseModule):
 
         # if we finish a patch or current entry is not valid, we acquire a new
         # even and odd index pairs from Non Zero Fetch Unit
-        self.read_ptr.data = 1#int((not self.valid.data) or self.patch_complete.data)
+        self.read_ptr.data = int((not self.valid.data) or self.patch_complete.data)
+
+        if DEBUG == 1:
+            print("[PTR READ: memory address:", self.memory_addr.data, "mem offset is: ", self.memory_shift.data, "if read new block? ",self.read_spmat.data,"]")
+            if self.read_ptr.data == 1:
+                print("[PTR READ: read more activation from NZERO FETCH]")
+            if self.patch_complete.data:
+                print("[PTR READ: current patch is completed]")
+
+
 
     def update(self):
         # Only read index pointers when we need index pointers and next activation value is not empty
         self.read_enable.data = int(self.read_ptr.data and (not self.empty_D.data[self.getId()]))
+        if DEBUG:
+            print("[PTR READ: read from Nzero fetch?",self.read_enable.data,"]")
 
         # read a new set of odd and even index pointers and activation value
         if self.read_ptr.data == 1:
@@ -137,6 +163,10 @@ class PtrRead(BaseModule):
                 self.ptr_even_addr.data = self.ptr_even_addr_D.data[self.getId()]
                 self.index_flag.data = self.index_flag_D.data[self.getId()]
                 self.value.data = self.value_D.data[self.getId()]
+
+                if DEBUG == 1:
+                    print("[PTR READ: successful read from NZERO fetch, value:",self.value.data,"]")
+
             self.empty.data = self.empty_D.data[self.getId()]
         # If current entry is valid, we keep reading sparse matrix memory, update the
         # read status
@@ -144,15 +174,7 @@ class PtrRead(BaseModule):
             self.start_addr_p.data = self.current_addr.data + 1
             self.patch_complete_p.data = self.patch_complete.data
             self.memory_addr_p.data = self.memory_addr.data
+            print("[PTR READ: update start address, patch_complete status]")
 
-    def showEssential(self):
-        print("---Pointer Read---")
-        print(self.read_enable)
-        print(self.memory_addr)
-        print(self.memory_shift)
-        print(self.read_spmat)
-        print(self.patch_complete)
-        print(self.value_w)
-        print(self.valid)
-        print(self.read_ptr)
+
 

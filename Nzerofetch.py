@@ -58,12 +58,13 @@ class NzeroFetch(BaseModule):
             dependency.reg_addr_w.shared = True
             self.acts_per_bank_D = dependency.acts_per_bank
             dependency.acts_per_bank.shared = True
+            print("[NZEROFETCH: CONNECTION SUCCESS TO:",dependency.getName(),"]")
         elif dependency.getName() == "Pointer Read Unit":
             self.read_ptr.data[dependency.getId()] = dependency.read_ptr
             dependency.read_ptr.shared = True
+            print("[NZEROFETCH: CONNECTION SUCCESS TO:", dependency.getName(), "]")
         else:
             print("Error: Connection Error!")
-
 
     def propagate(self):
         self.one_full.data = 0
@@ -107,14 +108,14 @@ class NzeroFetch(BaseModule):
 
         self.next_shift.data = int(not(self.one_full.data and self.find.data))
         self.next_reg_addr.data = int((not self.find) or((self.pack_addr.data == NUM_PE-1) and (not self.one_full.data)))
-
+        print("[NZEROFETCH: find:",self.find.data,"pack addr:",self.pack_addr.data,"one full",self.one_full.data,"]")
         self.write_enable.data = int(self.find.data and (not self.one_full.data))
 
         if DEBUG:
             if self.next_reg_addr.data == 1:
-                print("[NZEROFECTH: ask from ACTRW for more activations]")
+                print("[NZEROFETCH: ask from ACTRW for more activations]")
             else:
-                print("[NZEROFECTH: do not ask from ACTRW for more activations]")
+                print("[NZEROFETCH: do not ask from ACTRW for more activations]")
 
 
     def update(self):

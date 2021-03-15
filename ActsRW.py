@@ -32,22 +32,21 @@ class ActsRW(BaseModule):
 
 
         # To Arithmetic module
-        self.read_addr_arithm = Register(width=NUM_PE,name="read_addr_arithm")
-        self.write_addr_arithm = Register(width=NUM_PE,name="write_addr_arithm")
-        self.write_data_arithm = Register(width=NUM_PE,name="write_data_arithm")
-        self.write_enable = Register(width=NUM_PE,name="write_enable")
+        for i in range(NUM_PE):
+            self.__setattr__("read_addr_arithm_"+str(i),Wire(name="read_addr_arithm_"+str(i)))
+            self.__setattr__("write_addr_arithm_" + str(i),
+                             Wire(name="write_addr_arithm_" + str(i)))
+            self.__setattr__("write_data_arithm_" + str(i),
+                             Wire(name="write_data_arithm_" + str(i)))
+            self.__setattr__("write_enable_" + str(i),
+                            Wire(name="write_enable_D_" + str(i)))
+
+            self.__setattr__("read_data_arithm_"+str(i),Wire(name="read_data_arithm_"+str(i)))
+
 
         # Wire
-        self.read_data_arithm = Wire(width=NUM_PE,name="read_data_arithm")
         self.write_complete = Wire(name="write_complete")
         self.layer_complete = Wire(name="layer_complete")
-
-        # SharedWire
-        self.read_addr_arithm_D = Wire(shared=True,width=NUM_PE,name="read_addr_arithm_D")
-        self.write_addr_arithm_D = Wire(shared=True,width=NUM_PE,name="write_addr_arithm_D")
-        self.write_data_arithm_D = Wire(shared=True,width=NUM_PE,name="write_data_arithm_D")
-        self.write_enable_D = Wire(shared=True,width=NUM_PE,name="write_enable_D")
-
 
 
         self.bank_size = (ACTRW_maxcapacity - 1) // NUM_PE + 1
@@ -61,7 +60,9 @@ class ActsRW(BaseModule):
                 values = f.read().splitlines()
                 for i in range(0, len(values)):
                     self.ACTmem[self.which.data].data[i] = int(values[i])
-
+            print("[ACTRW: activation init success]")
+            print("Bank 0:",self.ACTmem[0].data)
+            print("Bank 1:", self.ACTmem[1].data)
 
     def set_state(self, input_size_t, which_t, bias_t):
         self.which.data = which_t
@@ -75,15 +76,22 @@ class ActsRW(BaseModule):
         if dependency.getName() == "Non-Zero Fetch":
             self.next_reg_addr = dependency.next_reg_addr
             dependency.next_reg_addr.shared = True
+            print("[ACTRW: CONNECTIONS SUCCESS TO:",dependency.getName(),"]")
         elif dependency.getName() == "Arithm Unit":
-            self.read_addr_arithm_D.data[dependency.getId()] = dependency.read_addr.data
+
+            self.__setattr__("read_addr_arithm_D_" + str(dependency.getId()),dependency.read_addr)
             dependency.read_addr.shared = True
-            self.write_addr_arithm_D.data[dependency.getId()] = dependency.write_addr.data
+
+            self.__setattr__("write_addr_arithm_D_" + str(dependency.getId()), dependency.write_addr)
             dependency.write_addr.shared = True
-            self.write_data_arithm_D.data[dependency.getId()] = dependency.write_data.data
+
+            self.__setattr__("write_data_arithm_D_" + str(dependency.getId()), dependency.write_data)
             dependency.write_data.shared = True
-            self.write_enable_D.data[dependency.getId()] = dependency.write_enable.data
+
+            self.__setattr__("write_enable_D_" + str(dependency.getId()), dependency.write_enable)
             dependency.write_enable.data = True
+
+            print("[ACTRW: CONNECTIONS SUCCESS TO:", dependency.getName(),dependency.getId(), "]")
         else:
             print("Error: Unknown module type!")
 
@@ -145,16 +153,21 @@ class ActsRW(BaseModule):
 
         self.write_complete.data = 1
         for i in range(NUM_PE):
-            self.read_data_arithm.data[i] = self.ACTmem[arithm_id].data[self.read_data_arithm.data[i] * NUM_PE + i]
-            self.write_complete.data = int(self.write_complete.data and (not self.write_enable.data[i]))
+            read_result = self.ACTmem[arithm_id].data[self.__getattribute__("read_addr_arithm_"+str(i)).data * NUM_PE + i]
+            output = self.__getattribute__("read_data_arithm_"+str(i))
+            output.data = read_result
+
+            self.write_complete.data = int(self.write_complete.data and (not self.__getattribute__("write_enable_"+str(i)).data))
 
         self.layer_complete.data = int(self.write_complete.data and (self.internal_state.data == Empty_k))
+
+        if DEBUG:
+            print("[ACTRW: incoming write_enable_D",self.__getattribute__("write_enable_D_"+str(i)).data,"]")
 
     def update(self):
         arithm_id = 1 - self.which.data
 
         if self.next_reg_addr.data == 1:
-
             self.read_addr_reg.data = self.read_addr_reg_D.data
             self.internal_state.data = self.internal_state_D.data
 
@@ -163,10 +176,22 @@ class ActsRW(BaseModule):
 
 
         for i in range(NUM_PE):
-            if self.write_enable_D.data[i] == 1:
-                self.ACTmem[arithm_id].data[self.write_addr_arithm_D.data[i]*NUM_PE + i] = self.write_data_arithm_D.data[i]
 
-            self.read_addr_arithm.data[i] = self.read_addr_arithm_D.data[i]
-            self.write_data_arithm.data[i] = self.write_data_arithm_D.data[i]
-            self.write_addr_arithm.data[i] = self.write_addr_arithm_D.data[i]
-            self.write_enable.data[i] = self.write_enable_D.data[i]
+            if self.__getattribute__("write_enable_D_"+str(i)).data == 1:
+                mem_index = self.__getattribute__("write_addr_arithm_D_"+str(i)).data * NUM_PE + i
+                self.ACTmem[arithm_id].data[mem_index] = self.__getattribute__("write_data_arithm_D_"+str(i)).data
+                print("[ACTRW: write finished!]")
+
+            self.__getattribute__("read_addr_arithm_" + str(i)).data = self.__getattribute__(
+                "read_addr_arithm_D_" + str(i)).data
+            self.__getattribute__("write_data_arithm_" + str(i)).data = self.__getattribute__(
+                "write_data_arithm_D_" + str(i)).data
+            self.__getattribute__("write_addr_arithm_" + str(i)).data = self.__getattribute__(
+                "write_addr_arithm_D_" + str(i)).data
+            self.__getattribute__("write_enable_" + str(i)).data = self.__getattribute__(
+                "write_enable_D_" + str(i)).data
+
+
+
+    def getattr(self,stringName):
+        return self.__getattribute__(stringName)
