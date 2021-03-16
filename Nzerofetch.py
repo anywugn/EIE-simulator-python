@@ -108,7 +108,10 @@ class NzeroFetch(BaseModule):
 
         self.next_shift.data = int(not(self.one_full.data and self.find.data))
         self.next_reg_addr.data = int((not self.find) or((self.pack_addr.data == NUM_PE-1) and (not self.one_full.data)))
-        print("[NZEROFETCH: find:",self.find.data,"pack addr:",self.pack_addr.data,"one full",self.one_full.data,"]")
+
+        if DEBUG:
+            print("[NZEROFETCH: find:",self.find.data,"pack addr:",self.pack_addr.data,"one full",self.one_full.data,"]")
+
         self.write_enable.data = int(self.find.data and (not self.one_full.data))
 
         if DEBUG:

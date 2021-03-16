@@ -1,20 +1,20 @@
-PTRVEC_num_lines = 40
+PTRVEC_num_lines = 500000
 
-NUM_PE = 5
+NUM_PE = 32
 
-SPMAT_num_lines = 800
+SPMAT_num_lines = 8000000
 SPMAT_index_bits = 4
 SPMAT_unit_line = 8
 SPMAT_weight_bits = 4
 
 
-NZEROFETCH_buffersize = 300
+NZEROFETCH_buffersize = 300000
 
 
 ARITHM_codebooksize = 16
 
 
-ACTRW_maxcapacity = 800
+ACTRW_maxcapacity = 4097
 
-DEBUG = 1
+DEBUG = 0
 

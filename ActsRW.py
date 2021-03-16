@@ -51,19 +51,31 @@ class ActsRW(BaseModule):
 
         self.bank_size = (ACTRW_maxcapacity - 1) // NUM_PE + 1
         self.memory_size = self.bank_size * NUM_PE
-
         self.ACTmem = [Memory(name="ACTmem0", size=self.memory_size),Memory(name="ACTmem1", size=self.memory_size)]
 
 
         if os.path.isfile(filename):
             with open(filename, 'r') as f:
-                values = f.read().splitlines()
-                for i in range(0, len(values)):
-                    self.ACTmem[self.which.data].data[i] = int(values[i])
-            print("[ACTRW: activation init success]")
-            print("Bank 0:",self.ACTmem[0].data)
-            print("Bank 1:", self.ACTmem[1].data)
+                flt = []
+                values = f.read().split()
+                for i in values:
+                    flt.append(float(i))
+                ind = 0
+                for i in flt:
+                    self.ACTmem[self.which.data].data[ind] = flt[ind]
+                    ind+=1
 
+
+
+
+            # with open(filename, 'r') as f:
+            #     values = f.read().splitlines()
+            #     for i in range(0, len(values)):
+            #         self.ACTmem[self.which.data].data[i] = int(values[i])
+            print("[ACTRW: activation init success]")
+            print("Length:",len(self.ACTmem[0].data),self.ACTmem[0].data)
+            print("Length:",len(self.ACTmem[1].data),self.ACTmem[1].data)
+        self.activation_length = len(flt)
     def set_state(self, input_size_t, which_t, bias_t):
         self.which.data = which_t
         self.has_bias.data = bias_t
@@ -150,6 +162,7 @@ class ActsRW(BaseModule):
         else:
             print("Error: unknown state")
 
+        print("ACTIVATION STATE:",self.internal_state)
 
         self.write_complete.data = 1
         for i in range(NUM_PE):
@@ -180,7 +193,9 @@ class ActsRW(BaseModule):
             if self.__getattribute__("write_enable_D_"+str(i)).data == 1:
                 mem_index = self.__getattribute__("write_addr_arithm_D_"+str(i)).data * NUM_PE + i
                 self.ACTmem[arithm_id].data[mem_index] = self.__getattribute__("write_data_arithm_D_"+str(i)).data
-                print("[ACTRW: write finished!]")
+
+                if DEBUG:
+                    print("[ACTRW: write finished!]")
 
             self.__getattribute__("read_addr_arithm_" + str(i)).data = self.__getattribute__(
                 "read_addr_arithm_D_" + str(i)).data

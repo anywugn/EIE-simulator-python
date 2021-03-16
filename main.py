@@ -6,19 +6,32 @@ from Nzerofetch import *
 from ActsRW import *
 from arithm import *
 
-def assemble(NUM_PE,cycle):
+def assemble(folderpath,NUM_PE,cycle):
     ptr = []
     spm = []
     ari = []
 
-    acts = ActsRW("activations.txt")
-    acts.set_state(13,0,0)
+    # acts = ActsRW("./alexNet (extract.me)/act.dat")
+    # print()
+    # ari = ArithmUnit("./alexNet (extract.me)/arithm.dat",0)
+    # print()
+    # ptr = PtrRead("./alexNet (extract.me)/ptr/ptr14.dat",0)
+    # print()
+    # spm = SpMatRead("./alexNet (extract.me)/spm/spm14.dat",0)
+    #
+
+
+
+    acts = ActsRW(folderpath+"/act.dat")
+    print("Activation length:",acts.activation_length)
+    acts.set_state(acts.activation_length,0,1)
+
     nzero = NzeroFetch()
 
     for i in range(NUM_PE):
-        ptr.append(PtrRead("column_pointer.txt",i))
-        spm.append(SpMatRead("spmat.txt", i))
-        ari.append(ArithmUnit("weight.txt", i))
+        ptr.append(PtrRead(folderpath+"/ptr/ptr"+str(i)+".dat",i))
+        spm.append(SpMatRead(folderpath+"/spm/spm"+str(i)+".dat", i))
+        ari.append(ArithmUnit(folderpath+"/arithm.dat", i))
 
     for i in range(len(ptr)):
         ptr[i].connect(nzero)
@@ -37,8 +50,9 @@ def assemble(NUM_PE,cycle):
     acts.connect(nzero)
     nzero.connect(acts)
 
-    for i in range(cycle):
-        print("cycle", i)
+    j = 0
+    while acts.layer_complete.data != 1:
+        print("cycle", j)
         print("----propagate----")
         for i in range(len(ptr)):
             ptr[i].propagate()
@@ -55,115 +69,25 @@ def assemble(NUM_PE,cycle):
         nzero.update()
         print(acts.layer_complete)
         print("\n")
-    print(acts.ACTmem[1].data)
+        j+=1
+    print(acts.ACTmem[1].data[0:4000])
 
 def main():
-    assemble(NUM_PE,50)
-    # ptr0 = PtrRead("column_pointer.txt", 0)
-    # ptr1 = PtrRead("column_pointer.txt", 1)
-    # ptr2 = PtrRead("column_pointer.txt", 2)
-    # ptr3 = PtrRead("column_pointer.txt", 3)
-    #
-    #
-    # spm0 = SpMatRead("spmat.txt", 0)
-    # spm1 = SpMatRead("spmat.txt", 1)
-    # spm2 = SpMatRead("spmat.txt", 2)
-    # spm3 = SpMatRead("spmat.txt", 3)
-    #
-    # ari0 = ArithmUnit("weight.txt", 0)
-    # ari1 = ArithmUnit("weight.txt", 1)
-    # ari2 = ArithmUnit("weight.txt", 2)
-    # ari3 = ArithmUnit("weight.txt", 3)
-    #
-    # acts = ActsRW("activations.txt")
-    # acts.set_state(13,0,0)
-    # Nzero = NzeroFetch()
-    #
-    # ptr0.connect(Nzero)
-    # ptr1.connect(Nzero)
-    # ptr2.connect(Nzero)
-    # ptr3.connect(Nzero)
-    #
-    #
-    # spm0.connect(ptr0)
-    # spm1.connect(ptr1)
-    # spm2.connect(ptr2)
-    # spm3.connect(ptr3)
-    #
-    # ari0.connect(spm0)
-    # ari1.connect(spm1)
-    # ari2.connect(spm2)
-    # ari3.connect(spm3)
-    #
-    # ari0.connect(acts)
-    # ari1.connect(acts)
-    # ari2.connect(acts)
-    # ari3.connect(acts)
-    #
-    # acts.connect(ari0)
-    # acts.connect(ari1)
-    # acts.connect(ari2)
-    # acts.connect(ari3)
-    #
-    # acts.connect(Nzero)
-    # Nzero.connect(acts)
-    #
-    #
-    # Nzero.connect(ptr0)
-    # Nzero.connect(ptr1)
-    # Nzero.connect(ptr2)
-    # Nzero.connect(ptr3)
-    #
-    #
-    # cycle = 50
-    # for i in range(cycle):
-    #     print("cycle",i)
-    #     print("----propagate----")
-    #
-    #     ptr0.propagate()
-    #     ptr1.propagate()
-    #     ptr2.propagate()
-    #     ptr3.propagate()
-    #
-    #     spm0.propagate()
-    #     spm1.propagate()
-    #     spm2.propagate()
-    #     spm3.propagate()
-    #
-    #     ari0.propagate()
-    #     ari1.propagate()
-    #     ari2.propagate()
-    #     ari3.propagate()
-    #
-    #     acts.propagate()
-    #     Nzero.propagate()
-    #     print("----update----")
-    #     ptr0.update()
-    #     ptr1.update()
-    #     ptr2.update()
-    #     ptr3.update()
-    #
-    #     spm0.update()
-    #     spm1.update()
-    #     spm2.update()
-    #     spm3.update()
-    #
-    #     ari0.update()
-    #     ari1.update()
-    #     ari2.update()
-    #     ari3.update()
-    #
-    #
-    #     acts.update()
-    #     Nzero.update()
-    #     print(acts.layer_complete)
-    #     print("\n")
-    # print(acts.ACTmem[1].data)
+    assemble("./alexNet (extract.me)",NUM_PE,100000)
+    # acts = ActsRW("./alexNet (extract.me)/act.dat")
+    # print()
+    # ari = ArithmUnit("./alexNet (extract.me)/arithm.dat",0)
+    # print()
+    # ptr = PtrRead("./alexNet (extract.me)/ptr/ptr14.dat",0)
+    # print()
+    # spm = SpMatRead("./alexNet (extract.me)/spm/spm14.dat",0)
+
+
+        # ind = 0
+        # for i in flt:
+        #     self.ACTmem[self.which.data].data[ind] = flt[ind]
+        #     ind += 1
+
 
 if __name__ == '__main__':
     main()
-    # acts = ActsRW("activations.txt")
-    # for i in range(5):
-    #     acts.__setattr__("nigga"+str(i),Wire(name="nigga"+str(i)))
-    # print(acts.nigga0)
-    # print(acts.nigga2)

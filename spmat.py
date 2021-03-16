@@ -40,16 +40,20 @@ class SpMatRead(BaseModule):
         self.WImem = Memory("WImem", SPMAT_num_lines)
 
         if os.path.isfile(filename):
-            with open(filename,'r') as f:
-                values = f.read().splitlines()
+            with open(filename, 'r') as f:
+                flt = []
+                values = f.read().split()
 
-                for i in range(0, len(values)):
-                    self.WImem.data[i] = int(values[i])
+                for i in values:
+                    flt.append(int(i[0:-1]))
 
-                for i in range(0, 2*self.unit_line):
-                    self.data_read.data[i] = self.WImem.data[i]
+                ind = 0
+                for i in flt:
+                    self.WImem.data[ind] = i
+                    ind += 1
+            print("Length:",len(self.WImem.data)//2,self.WImem.data[0:100])
             print("[SPMAT: mem init success]")
-            print(self.WImem.data)
+
         # Others
         self.read_times = 0
 
@@ -101,5 +105,6 @@ class SpMatRead(BaseModule):
         self.valid_w.data = self.valid.data
         self.patch_complete_w.data = self.patch_complete.data
 
-        print("[SPMAT: weight code:",self.code.data," index code:",self.index.data,
+        if DEBUG:
+            print("[SPMAT: weight code:",self.code.data," index code:",self.index.data,
               " activation value:",self.value.data," valid:",self.valid_w.data,"current patch is completed?",self.patch_complete.data,"]")

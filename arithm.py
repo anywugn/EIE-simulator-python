@@ -56,13 +56,23 @@ class ArithmUnit(BaseModule):
         self.valid_D = None
         self.read_data_D = None
 
-        if os.path.isfile(filename):
-            with open(filename, 'r') as f:
-                values = f.read().splitlines()
-                for i in range(0, len(values)):
-                    self.codebook[i] = float(values[i])
-            print('[ARITHM: codebook init success]')
-            print(self.codebook)
+        with open(filename, 'r') as f:
+            flt = []
+            values = f.read().split()
+            for i in values:
+                flt.append(float(i))
+            for i in range(len(flt)):
+                self.codebook[i] = flt[i]
+        print('[ARITHM: codebook init success]')
+        print("Length:",len(self.codebook),self.codebook)
+
+
+        # if os.path.isfile(filename):
+        #     with open(filename, 'r') as f:
+        #         values = f.read().splitlines()
+        #         for i in range(0, len(values)):
+        #             self.codebook[i] = float(values[i])
+
 
     def connect(self, dependency):
         if dependency.getName() == "Sparse Matrix Read" and dependency.getId() == self.getId():
@@ -140,4 +150,6 @@ class ArithmUnit(BaseModule):
             self.read_data.data = self.write_data.data
         else:
             self.read_data.data = self.read_data_D.data
-            print("[ARITHM: accumulate value acquired from ACTRW:",self.read_data.data,"]")
+
+            if DEBUG:
+                print("[ARITHM: accumulate value acquired from ACTRW:",self.read_data.data,"]")

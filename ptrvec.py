@@ -53,13 +53,27 @@ class PtrRead(BaseModule):
 
         # Read value from file
         if os.path.isfile(filename):
-            with open(filename, "r") as f:
-                values = f.read().splitlines()
-                for i in range(0, len(values)):
-                    self.PTRmem.data[i] = int(values[i])
+            with open(filename, 'r') as f:
+                flt = []
+                values = f.read().split()
 
+                for i in values:
+                    flt.append(int(i[0:-1]))
+
+                ind = 0
+                for i in flt:
+                    self.PTRmem.data[ind] = i
+                    ind += 1
+            print("Length:", len(flt), self.PTRmem.data[len(flt)-1])
             print("[PTR READ mem init success]")
-            print(self.PTRmem.data)
+        # if os.path.isfile(filename):
+        #     with open(filename, "r") as f:
+        #         values = f.read().splitlines()
+        #         for i in range(0, len(values)):
+        #             self.PTRmem.data[i] = int(values[i])
+
+
+
     def connect(self, dependency: BaseModule):
 
         """
@@ -174,7 +188,9 @@ class PtrRead(BaseModule):
             self.start_addr_p.data = self.current_addr.data + 1
             self.patch_complete_p.data = self.patch_complete.data
             self.memory_addr_p.data = self.memory_addr.data
-            print("[PTR READ: update start address, patch_complete status]")
+
+            if DEBUG:
+                print("[PTR READ: update start address, patch_complete status]")
 
 
 
