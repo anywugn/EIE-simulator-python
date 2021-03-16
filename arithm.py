@@ -65,13 +65,7 @@ class ArithmUnit(BaseModule):
                 self.codebook[i] = flt[i]
         print('[ARITHM: codebook init success]')
         print("Length:",len(self.codebook),self.codebook)
-
-
-        # if os.path.isfile(filename):
-        #     with open(filename, 'r') as f:
-        #         values = f.read().splitlines()
-        #         for i in range(0, len(values)):
-        #             self.codebook[i] = float(values[i])
+        print("Code book length:", len(flt))
 
 
     def connect(self, dependency):

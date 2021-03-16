@@ -51,8 +51,9 @@ class SpMatRead(BaseModule):
                 for i in flt:
                     self.WImem.data[ind] = i
                     ind += 1
-            print("Length:",len(self.WImem.data)//2,self.WImem.data[0:100])
             print("[SPMAT: mem init success]")
+            print("Length:",len(flt)//2,self.WImem.data[0:100])
+
 
         # Others
         self.read_times = 0

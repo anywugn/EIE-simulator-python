@@ -14,7 +14,7 @@ NZEROFETCH_buffersize = 300000
 ARITHM_codebooksize = 16
 
 
-ACTRW_maxcapacity = 4097
+ACTRW_maxcapacity = 100000
 
 DEBUG = 0
 

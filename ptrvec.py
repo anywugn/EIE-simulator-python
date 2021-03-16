@@ -64,15 +64,9 @@ class PtrRead(BaseModule):
                 for i in flt:
                     self.PTRmem.data[ind] = i
                     ind += 1
-            print("Length:", len(flt), self.PTRmem.data[len(flt)-1])
+
             print("[PTR READ mem init success]")
-        # if os.path.isfile(filename):
-        #     with open(filename, "r") as f:
-        #         values = f.read().splitlines()
-        #         for i in range(0, len(values)):
-        #             self.PTRmem.data[i] = int(values[i])
-
-
+            print("Column Pointer Length:", len(flt), "Last entry value:",self.PTRmem.data[len(flt) - 1])
 
     def connect(self, dependency: BaseModule):
 

@@ -66,16 +66,11 @@ class ActsRW(BaseModule):
                     ind+=1
 
 
-
-
-            # with open(filename, 'r') as f:
-            #     values = f.read().splitlines()
-            #     for i in range(0, len(values)):
-            #         self.ACTmem[self.which.data].data[i] = int(values[i])
             print("[ACTRW: activation init success]")
-            print("Length:",len(self.ACTmem[0].data),self.ACTmem[0].data)
-            print("Length:",len(self.ACTmem[1].data),self.ACTmem[1].data)
+            print("Length:",len(self.ACTmem[0].data),self.ACTmem[0].data[0:100])
+            print("Length:",len(self.ACTmem[1].data),self.ACTmem[1].data[0:100])
         self.activation_length = len(flt)
+        print("Activation Length:",self.activation_length)
     def set_state(self, input_size_t, which_t, bias_t):
         self.which.data = which_t
         self.has_bias.data = bias_t
